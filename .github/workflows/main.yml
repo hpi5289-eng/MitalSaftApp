@@ -1,4 +1,4 @@
-name: Guaranteed APK Build
+name: Working APK Build
 
 on:
   workflow_dispatch:
@@ -8,29 +8,28 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Download and Fix Code
+    - uses: actions/checkout@v4
+    
+    - name: Setup Gradle properly
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: '8.5'
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        
+    - name: Build APK (No daemon to avoid fork error)
       run: |
-        # Fresh download - no checkout issues
-        wget -q https://github.com/hpi5289-eng/MitalSaftApp/archive/refs/heads/main.zip
-        unzip -q main.zip
-        cd MitalSaftApp-main
-        
-        # NUCLEAR FIX: Create new gradlew from scratch
-        rm -f gradlew
-        echo '#!/bin/sh' > gradlew
-        echo 'exec ./gradlew "$@"' >> gradlew
-        chmod 755 gradlew
-        
-        # Go to android folder
         cd android
-        rm -f gradlew
-        echo '#!/bin/sh' > gradlew
-        echo 'export JAVA_HOME=/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/11.0.29-7/x64' >> gradlew
-        echo './gradlew "$@"' >> gradlew
-        chmod 755 gradlew
+        chmod +x gradlew
+        ./gradlew :app:assembleDebug --no-daemon --max-workers=2
         
-        # SIMPLE BUILD
-        ./gradlew :app:assembleDebug 2>&1 | tail -50
-        
-        # Find APK
-        find . -name "*.apk" -type f | head -5
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: mital-saft-apk
+        path: android/app/build/outputs/apk/debug/*.apk
+        if-no-files-found: error
