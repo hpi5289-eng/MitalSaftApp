@@ -1,38 +1,39 @@
-name: Debug Android Build
+name: Build Android APK
 
-on: workflow_dispatch
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
 
 jobs:
-  debug-build:
+  build:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Show project structure
-      run: |
-        echo "=== FULL PROJECT STRUCTURE ==="
-        find . -type f -name "*.gradle" -o -name "*.kt" -o -name "*.java" | head -20
-        echo ""
-        echo "=== GRADLE FILES ==="
-        find . -name "*.gradle*" -type f
-        
-    - name: Check Gradle version
-      run: |
-        ./gradlew --version || echo "Gradle not working"
-        
-    - name: Try to build with debug info
-      run: |
-        # Clean first
-        ./gradlew clean --no-daemon
-        
-        # Try build with all debug info
-        ./gradlew :app:assembleDebug \
-          --stacktrace \
-          --info \
-          --no-daemon \
-          --console=verbose || true
-        
-    - name: Check Gradle tasks
-      run: |
-        ./gradlew tasks --all || echo "Cannot list tasks"
+      - uses: actions/checkout@v4
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.5'
+      
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+      
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+      
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: mital-workmanager-v8
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
