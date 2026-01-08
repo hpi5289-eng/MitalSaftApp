@@ -1,60 +1,50 @@
-name: Build Mital SAFT App
+name: Android Build
 
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:  # Manual trigger
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     
     steps:
-    # 1. Download code
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
     
-    # 2. Show folder structure (DEBUG)
-    - name: Debug - Show files
+    - name: Display project structure
       run: |
-        echo "📁 Folder structure:"
-        find . -type f -name "*.gradle" -o -name "gradlew*" | sort
+        echo "📁 Project structure:"
+        ls -la
         echo ""
-        echo "📋 Important files check:"
-        [ -f "gradlew" ] && echo "✅ gradlew exists" || echo "❌ gradlew missing"
-        [ -f "settings.gradle" ] && echo "✅ settings.gradle exists" || echo "❌ settings.gradle missing"
-        [ -f "android/build.gradle" ] && echo "✅ android/build.gradle exists" || echo "❌ android/build.gradle missing"
-        [ -f "android/app/build.gradle" ] && echo "✅ android/app/build.gradle exists" || echo "❌ android/app/build.gradle missing"
-    
-    # 3. Setup Java
-    - name: Setup Java 11
+        echo "📁 Android folder:"
+        ls -la android/
+        
+    - name: Fix gradlew line endings
+      run: |
+        # Remove Windows line endings
+        sed -i 's/\r$//' gradlew
+        # Make it executable
+        chmod +x gradlew
+        
+    - name: Set up JDK 11
       uses: actions/setup-java@v4
       with:
         java-version: '11'
         distribution: 'temurin'
-    
-    # 4. If gradlew missing, create a simple one
-    - name: Create gradlew if missing
+        
+    - name: Grant execute permission for gradlew in android folder
       run: |
-        if [ ! -f "gradlew" ]; then
-          echo "⚠ gradlew not found, creating minimal version..."
-          echo '#!/bin/bash' > gradlew
-          echo 'echo "Running gradle wrapper..."' >> gradlew
-          echo 'cd android' >> gradlew
-          echo './gradlew "$@"' >> gradlew
-          chmod +x gradlew
-        else
-          chmod +x gradlew
-        fi
-    
-    # 5. Build
-    - name: Build APK
+        chmod +x android/gradlew
+        
+    - name: Build Android app
       run: |
-        echo "🚀 Starting build..."
-        ./gradlew :app:assembleDebug || echo "Build command failed"
-    
-    # 6. Check results
-    - name: Find APK files
-      run: |
-        echo "🔍 Searching for APK files..."
-        find . -name "*.apk" -type f 2>/dev/null || echo "No APK files found"
+        cd android
+        ./gradlew :app:assembleDebug
+        
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-debug-apk
+        path: android/app/build/outputs/apk/debug/*.apk
