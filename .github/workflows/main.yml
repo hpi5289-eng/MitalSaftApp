@@ -1,39 +1,80 @@
-name: Build Android APK
+name: Build APK with Line Ending Fix
 
 on:
-  push:
-    branches: [main, master]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.5'
-      
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-      
-      - name: Make gradlew executable
-        run: chmod +x gradlew
-      
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
-      
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: mital-workmanager-v8
-          path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
+    - uses: actions/checkout@v4
+    
+    - name: Completely fix line endings
+      run: |
+        echo "=== Fixing ALL line endings ==="
+        
+        # Method 1: Using dos2unix (most reliable)
+        sudo apt-get update
+        sudo apt-get install -y dos2unix
+        
+        # Fix gradlew
+        dos2unix gradlew
+        dos2unix android/gradlew 2>/dev/null || true
+        
+        # Method 2: Alternative using sed
+        sed -i 's/\r$//' gradlew
+        sed -i 's/\r$//' android/gradlew 2>/dev/null || true
+        
+        # Method 3: Using tr command
+        tr -d '\r' < gradlew > gradlew.tmp && mv gradlew.tmp gradlew
+        
+        # Verify fix
+        echo "Checking gradlew first line:"
+        head -1 gradlew | cat -A
+        echo ""
+        
+    - name: Set correct permissions
+      run: |
+        chmod 755 gradlew
+        chmod +x gradlew
+        chmod +x android/gradlew 2>/dev/null || true
+        
+        echo "Permissions after fix:"
+        ls -la gradlew
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        
+    - name: Test gradlew
+      run: |
+        echo "Testing if gradlew works:"
+        ./gradlew --version || echo "Trying alternative..."
+        
+    - name: Build APK
+      run: |
+        echo "Building APK..."
+        ./gradlew clean
+        ./gradlew :app:assembleDebug --stacktrace
+        
+    - name: Get APK for download
+      run: |
+        APK_PATH=$(find . -name "*.apk" -type f | head -1)
+        
+        if [ -f "$APK_PATH" ]; then
+          echo "✅ SUCCESS! APK created at: $APK_PATH"
+          echo "📦 File size: $(du -h "$APK_PATH" | cut -f1)"
+          echo ""
+          echo "📥 === COPY BELOW TEXT TO DOWNLOAD APK ==="
+          echo "BASE64_START"
+          base64 "$APK_PATH"
+          echo "BASE64_END"
+          echo ""
+          echo "🔧 Decode with: echo 'BASE64_TEXT' | base64 -d > app.apk"
+        else
+          echo "❌ APK not found. Listing build outputs:"
+          find . -type d -name "apk" -o -name "outputs" | xargs ls -la 2>/dev/null || true
+        fi
