@@ -1,4 +1,4 @@
-name: Working APK Build
+name: Build APK
 
 on:
   workflow_dispatch:
@@ -10,26 +10,20 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Setup Gradle properly
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        gradle-version: '8.5'
-        
     - name: Setup Java
       uses: actions/setup-java@v4
       with:
         java-version: '11'
         distribution: 'temurin'
         
-    - name: Build APK (No daemon to avoid fork error)
+    - name: Build APK
       run: |
         cd android
         chmod +x gradlew
-        ./gradlew :app:assembleDebug --no-daemon --max-workers=2
+        ./gradlew :app:assembleDebug
         
-    - name: Upload APK artifact
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: mital-saft-apk
         path: android/app/build/outputs/apk/debug/*.apk
-        if-no-files-found: error
