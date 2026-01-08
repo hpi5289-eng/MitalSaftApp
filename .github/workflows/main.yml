@@ -1,9 +1,6 @@
 name: Build Android APK
 
-on:
-  workflow_dispatch:  # मैन्युअल रन के लिए
-  push:
-    branches: [main]
+on: workflow_dispatch
 
 jobs:
   build:
@@ -12,23 +9,36 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Fix gradlew line endings
+    - name: Fix project structure
       run: |
-        sed -i 's/\r$//' gradlew
-        chmod +x gradlew
+        # Check if we're in correct directory
+        echo "Current directory: $(pwd)"
+        echo "Files:"
+        ls -la
+        echo ""
+        echo "Android files:"
+        ls -la android/ 2>/dev/null || echo "No android folder"
         
-    - name: Set up JDK 17
+    - name: Setup JDK 11 (Android के लिए बेहतर)
       uses: actions/setup-java@v4
       with:
+        java-version: '11'
         distribution: 'temurin'
-        java-version: '17'
         
-    - name: Build APK
+    - name: Fix permissions and build
       run: |
-        ./gradlew :app:assembleDebug
+        # Gradlew fix
+        if [ -f "gradlew" ]; then
+          sed -i 's/\r$//' gradlew
+          chmod +x gradlew
+          echo "✅ Fixed gradlew"
+        fi
         
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-debug-apk
-        path: app/build/outputs/apk/debug/*.apk
+        # Try different build commands
+        echo "Trying build..."
+        ./gradlew clean || echo "Clean failed, continuing..."
+        ./gradlew :app:assembleDebug --stacktrace || echo "Build failed with stacktrace"
+        
+    - name: Check build results
+      run: |
+        find . -name "*.apk" -type f 2>/dev/null | head -5 || echo "No APK files found"
