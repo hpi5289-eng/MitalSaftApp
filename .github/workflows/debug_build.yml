@@ -1,25 +1,13 @@
-name: Debug Build Process
+name: Build APK
 
-on:
-  workflow_dispatch:  # Manual trigger
+on: [push]
 
 jobs:
-  debug:
+  build:
     runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v4
-    
-    - name: Show folder structure
-      run: |
-        echo "📁 CURRENT FOLDER STRUCTURE:"
-        find . -type f -name "*.gradle" -o -name "*.kt" -o -name "*.xml" | head -20
-        echo ""
-        echo "📁 Android folder:"
-        ls -la android/ 2>/dev/null || echo "❌ android/ folder not found"
-        echo ""
-        echo "📁 Gradle files:"
-        ls -la android/*.gradle 2>/dev/null || echo "❌ No gradle files"
     
     - name: Setup Java
       uses: actions/setup-java@v4
@@ -27,13 +15,17 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
     
-    - name: Try to build with debug
+    - name: Make gradlew executable
+      run: chmod +x gradlew
+    
+    - name: Build APK
       run: |
-        cd android
-        chmod +x gradlew
-        ./gradlew tasks --all || echo "❌ Gradle tasks failed"
-        
-    - name: Check Gradle version
-      run: |
-        cd android
-        ./gradlew --version || echo "❌ Gradle version check failed"
+        ./gradlew :app:assembleDebug || ./gradlew assembleDebug
+    
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: mital-app
+        path: |
+          android/app/build/outputs/apk/debug/*.apk
+          android/app/build/outputs/apk/debug/output-metadata.json
