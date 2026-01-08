@@ -1,0 +1,39 @@
+name: Debug Build Process
+
+on:
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Show folder structure
+      run: |
+        echo "📁 CURRENT FOLDER STRUCTURE:"
+        find . -type f -name "*.gradle" -o -name "*.kt" -o -name "*.xml" | head -20
+        echo ""
+        echo "📁 Android folder:"
+        ls -la android/ 2>/dev/null || echo "❌ android/ folder not found"
+        echo ""
+        echo "📁 Gradle files:"
+        ls -la android/*.gradle 2>/dev/null || echo "❌ No gradle files"
+    
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+    
+    - name: Try to build with debug
+      run: |
+        cd android
+        chmod +x gradlew
+        ./gradlew tasks --all || echo "❌ Gradle tasks failed"
+        
+    - name: Check Gradle version
+      run: |
+        cd android
+        ./gradlew --version || echo "❌ Gradle version check failed"
