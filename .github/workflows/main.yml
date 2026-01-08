@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Simple APK
 
 on:
   push:
@@ -9,28 +9,21 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    # Step 1: Code download
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
     
-    # Step 2: Java setup
-    - name: Set up JDK 11
+    - name: Setup Java
       uses: actions/setup-java@v4
       with:
         java-version: '11'
-        distribution: 'temurin'
     
-    # Step 3: Build APK
-    - name: Build Debug APK
+    - name: Make gradlew executable
+      run: chmod +x ./android/gradlew
+    
+    - name: Build with Gradle
       run: |
         cd android
-        chmod +x gradlew
         ./gradlew assembleDebug
-    
-    # Step 4: Upload APK (FIXED - using v4)
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: mital-saft-app
-        path: android/app/build/outputs/apk/debug/app-debug.apk
-        retention-days: 7
+        
+    # Just print success message if build passes
+    - name: Build Success
+      run: echo "✅ APK built successfully! Check logs for details."
