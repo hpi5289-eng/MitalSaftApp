@@ -1,0 +1,65 @@
+name: Guaranteed APK Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: NUCLEAR FIX - Remove Windows line endings
+      run: |
+        # Fix gradlew once and for all
+        sed -i 's/\r$//' gradlew
+        # Also fix inside android folder
+        sed -i 's/\r$//' android/gradlew 2>/dev/null || true
+        # Make executable
+        chmod 755 gradlew
+        chmod 755 android/gradlew 2>/dev/null || true
+        
+        echo "✅ Line endings fixed completely"
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        
+    - name: Build with debug info
+      run: |
+        echo "Building APK..."
+        cd android
+        ./gradlew clean
+        ./gradlew :app:assembleDebug --stacktrace
+        
+    - name: Create Download Link
+      run: |
+        # Find APK file
+        APK_FILE=$(find . -name "*.apk" -type f | head -1)
+        
+        if [ -f "$APK_FILE" ]; then
+          echo "🎉 CONGRATULATIONS! APK BUILT SUCCESSFULLY!"
+          echo "📁 Location: $APK_FILE"
+          echo ""
+          echo "📥 === DIRECT DOWNLOAD INSTRUCTIONS ==="
+          echo "1. Go to: https://github.com/hpi5289-eng/MitalSaftApp/actions"
+          echo "2. Click on 'Guaranteed APK Build'"
+          echo "3. Click on latest run"
+          echo "4. Scroll down to 'Artifacts'"
+          echo "5. Click 'apk-artifact' to download"
+        else
+          echo "❌ APK not found. Showing error details..."
+          echo "Last 20 lines of build log:"
+          tail -20 /tmp/build.log 2>/dev/null || echo "Check previous step for errors"
+        fi
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: apk-artifact
+        path: |
+          android/app/build/outputs/apk/debug/*.apk
+          app/build/outputs/apk/debug/*.apk
