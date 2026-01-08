@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="@android:color/white">
+    
+    <!-- Work Details -->
+    <TextView
+        android:id="@+id/tvPartyName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Party: METRO PRINTER"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#2c3e50"/>
+    
+    <TextView
+        android:id="@+id/tvWorkName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Work: LAN SPEED PROBLEM"
+        android:textSize="16sp"
+        android:textColor="#7f8c8d"
+        android:layout_marginTop="5dp"/>
+    
+    <TextView
+        android:id="@+id/tvWorkId"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Work ID: #41"
+        android:textSize="14sp"
+        android:layout_marginTop="10dp"/>
+    
+    <TextView
+        android:id="@+id/tvDate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Date: 08-01-2026"
+        android:textSize="14sp"/>
+    
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Status: Pending"
+        android:textSize="14sp"
+        android:textColor="#e74c3c"
+        android:textStyle="bold"/>
+    
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#ddd"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp"/>
+    
+    <!-- Remark Input -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Remark (Required):"
+        android:textSize="14sp"
+        android:textColor="#2c3e50"/>
+    
+    <EditText
+        android:id="@+id/etRemark"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:hint="Enter remark here..."
+        android:gravity="top"
+        android:padding="10dp"
+        android:background="@drawable/edittext_border"
+        android:layout_marginTop="5dp"/>
+    
+    <!-- Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="20dp">
+        
+        <Button
+            android:id="@+id/btnMarkDone"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:text="MARK DONE"
+            android:layout_marginEnd="5dp"
+            android:background="#27ae60"
+            android:textColor="@android:color/white"/>
+        
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:text="BACK"
+            android:layout_marginStart="5dp"
+            android:background="#95a5a6"
+            android:textColor="@android:color/white"/>
+        
+    </LinearLayout>
+    
+</LinearLayout>
