@@ -1,0 +1,46 @@
+name: Fixed APK Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Show folder structure
+      run: |
+        echo "=== FOLDER STRUCTURE ==="
+        ls -la
+        echo ""
+        echo "=== ANDROID FOLDER ==="
+        ls -la android/
+        
+    - name: Fix android/gradlew permissions
+      run: |
+        cd android
+        sed -i 's/\r$//' gradlew
+        chmod +x gradlew
+        echo "✅ Android gradlew fixed"
+        ls -la gradlew
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        
+    - name: Build APK
+      run: |
+        echo "=== BUILDING APK ==="
+        cd android
+        ./gradlew :app:assembleDebug
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: mital-saft-apk
+        path: android/app/build/outputs/apk/debug/*.apk
+        if-no-files-found: error
