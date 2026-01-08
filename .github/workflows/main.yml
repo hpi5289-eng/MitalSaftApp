@@ -1,44 +1,38 @@
-name: Build Android APK
+name: Debug Android Build
 
 on: workflow_dispatch
 
 jobs:
-  build:
+  debug-build:
     runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Fix project structure
+    - name: Show project structure
       run: |
-        # Check if we're in correct directory
-        echo "Current directory: $(pwd)"
-        echo "Files:"
-        ls -la
+        echo "=== FULL PROJECT STRUCTURE ==="
+        find . -type f -name "*.gradle" -o -name "*.kt" -o -name "*.java" | head -20
         echo ""
-        echo "Android files:"
-        ls -la android/ 2>/dev/null || echo "No android folder"
+        echo "=== GRADLE FILES ==="
+        find . -name "*.gradle*" -type f
         
-    - name: Setup JDK 11 (Android के लिए बेहतर)
-      uses: actions/setup-java@v4
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-        
-    - name: Fix permissions and build
+    - name: Check Gradle version
       run: |
-        # Gradlew fix
-        if [ -f "gradlew" ]; then
-          sed -i 's/\r$//' gradlew
-          chmod +x gradlew
-          echo "✅ Fixed gradlew"
-        fi
+        ./gradlew --version || echo "Gradle not working"
         
-        # Try different build commands
-        echo "Trying build..."
-        ./gradlew clean || echo "Clean failed, continuing..."
-        ./gradlew :app:assembleDebug --stacktrace || echo "Build failed with stacktrace"
-        
-    - name: Check build results
+    - name: Try to build with debug info
       run: |
-        find . -name "*.apk" -type f 2>/dev/null | head -5 || echo "No APK files found"
+        # Clean first
+        ./gradlew clean --no-daemon
+        
+        # Try build with all debug info
+        ./gradlew :app:assembleDebug \
+          --stacktrace \
+          --info \
+          --no-daemon \
+          --console=verbose || true
+        
+    - name: Check Gradle tasks
+      run: |
+        ./gradlew tasks --all || echo "Cannot list tasks"
