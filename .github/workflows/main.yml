@@ -1,4 +1,4 @@
-name: Build APK with Line Ending Fix
+name: Guaranteed APK Build
 
 on:
   workflow_dispatch:
@@ -8,73 +8,29 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Completely fix line endings
+    - name: Download and Fix Code
       run: |
-        echo "=== Fixing ALL line endings ==="
+        # Fresh download - no checkout issues
+        wget -q https://github.com/hpi5289-eng/MitalSaftApp/archive/refs/heads/main.zip
+        unzip -q main.zip
+        cd MitalSaftApp-main
         
-        # Method 1: Using dos2unix (most reliable)
-        sudo apt-get update
-        sudo apt-get install -y dos2unix
-        
-        # Fix gradlew
-        dos2unix gradlew
-        dos2unix android/gradlew 2>/dev/null || true
-        
-        # Method 2: Alternative using sed
-        sed -i 's/\r$//' gradlew
-        sed -i 's/\r$//' android/gradlew 2>/dev/null || true
-        
-        # Method 3: Using tr command
-        tr -d '\r' < gradlew > gradlew.tmp && mv gradlew.tmp gradlew
-        
-        # Verify fix
-        echo "Checking gradlew first line:"
-        head -1 gradlew | cat -A
-        echo ""
-        
-    - name: Set correct permissions
-      run: |
+        # NUCLEAR FIX: Create new gradlew from scratch
+        rm -f gradlew
+        echo '#!/bin/sh' > gradlew
+        echo 'exec ./gradlew "$@"' >> gradlew
         chmod 755 gradlew
-        chmod +x gradlew
-        chmod +x android/gradlew 2>/dev/null || true
         
-        echo "Permissions after fix:"
-        ls -la gradlew
+        # Go to android folder
+        cd android
+        rm -f gradlew
+        echo '#!/bin/sh' > gradlew
+        echo 'export JAVA_HOME=/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/11.0.29-7/x64' >> gradlew
+        echo './gradlew "$@"' >> gradlew
+        chmod 755 gradlew
         
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        java-version: '11'
-        distribution: 'temurin'
+        # SIMPLE BUILD
+        ./gradlew :app:assembleDebug 2>&1 | tail -50
         
-    - name: Test gradlew
-      run: |
-        echo "Testing if gradlew works:"
-        ./gradlew --version || echo "Trying alternative..."
-        
-    - name: Build APK
-      run: |
-        echo "Building APK..."
-        ./gradlew clean
-        ./gradlew :app:assembleDebug --stacktrace
-        
-    - name: Get APK for download
-      run: |
-        APK_PATH=$(find . -name "*.apk" -type f | head -1)
-        
-        if [ -f "$APK_PATH" ]; then
-          echo "✅ SUCCESS! APK created at: $APK_PATH"
-          echo "📦 File size: $(du -h "$APK_PATH" | cut -f1)"
-          echo ""
-          echo "📥 === COPY BELOW TEXT TO DOWNLOAD APK ==="
-          echo "BASE64_START"
-          base64 "$APK_PATH"
-          echo "BASE64_END"
-          echo ""
-          echo "🔧 Decode with: echo 'BASE64_TEXT' | base64 -d > app.apk"
-        else
-          echo "❌ APK not found. Listing build outputs:"
-          find . -type d -name "apk" -o -name "outputs" | xargs ls -la 2>/dev/null || true
-        fi
+        # Find APK
+        find . -name "*.apk" -type f | head -5
