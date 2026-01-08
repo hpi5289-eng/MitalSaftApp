@@ -1,10 +1,9 @@
-name: Android Build
+name: Build Android APK
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,38 +12,26 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Display project structure
+    - name: Fix line endings and permissions
       run: |
-        echo "📁 Project structure:"
-        ls -la
-        echo ""
-        echo "📁 Android folder:"
-        ls -la android/
-        
-    - name: Fix gradlew line endings
-      run: |
-        # Remove Windows line endings
+        # Fix gradlew line endings
         sed -i 's/\r$//' gradlew
-        # Make it executable
         chmod +x gradlew
-        
-    - name: Set up JDK 11
-      uses: actions/setup-java@v4
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-        
-    - name: Grant execute permission for gradlew in android folder
-      run: |
         chmod +x android/gradlew
         
-    - name: Build Android app
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Build APK
       run: |
         cd android
-        ./gradlew :app:assembleDebug
+        ./gradlew assembleDebug
         
-    - name: Upload APK artifact
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: app-debug-apk
+        name: android-apk
         path: android/app/build/outputs/apk/debug/*.apk
