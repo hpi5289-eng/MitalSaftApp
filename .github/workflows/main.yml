@@ -1,4 +1,4 @@
-name: Build Simple APK
+name: Build Mital SAFT App
 
 on:
   push:
@@ -9,21 +9,29 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    # 1. Download code
     - uses: actions/checkout@v4
     
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        java-version: '11'
+    # 2. Install Java (SIMPLE WAY)
+    - name: Install Java 11
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y openjdk-11-jdk
+        java -version
     
-    - name: Make gradlew executable
-      run: chmod +x ./android/gradlew
+    # 3. Make gradlew executable
+    - name: Prepare Gradle
+      run: |
+        cd android
+        chmod +x gradlew
+        ./gradlew --version
     
-    - name: Build with Gradle
+    # 4. Build APK
+    - name: Build APK
       run: |
         cd android
         ./gradlew assembleDebug
         
-    # Just print success message if build passes
-    - name: Build Success
-      run: echo "✅ APK built successfully! Check logs for details."
+    # 5. Show success message
+    - name: Build Complete
+      run: echo "✅ APK built successfully! Check Android/app/build/outputs/apk/debug/"
